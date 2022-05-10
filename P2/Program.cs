@@ -4,7 +4,7 @@ namespace P2
 {
     class Program
     {
-
+                
         static void Main(string[] args)
         {
             //var ObjectiveFunctionCoefficients = new double[5]{ 9, 5, 4, 3, 2 };
@@ -16,9 +16,10 @@ namespace P2
 
 
             var simplexMethod = new SimplexMethod(ObjectiveFunctionCoefficients, RestrictionNumbers, RestrictionSigns);
-            simplexMethod.Print();
+            
+            var print = new SimplexTable.PrintSimplex();
 
-            simplexMethod.Solution();
+            simplexMethod.Solution(print.PrintInitial, print.PrintCanonical, print.Print);
     }
     }
 }
