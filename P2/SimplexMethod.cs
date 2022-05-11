@@ -27,11 +27,11 @@ namespace P2
 
     public class SimplexMethod
     {
-        public double[] ObjectiveFunctionCoefficients { get; } //Коэффиценты функции-цели
+        private double[] objectiveFunctionCoefficients; //Коэффиценты функции-цели
 
-        public double[,] RestrictionNumbers { get; } // Ограничения коєффициенты + правая часть
+        private double[,] restrictionNumbers; // Ограничения коєффициенты + правая часть
 
-        public Signs[] RestrictionSigns { get; } // знаки в ограничениях
+        private Signs[] restrictionSigns; // знаки в ограничениях
 
         public SimplexMethod(double[] objectiveFunctionCoefficients, double[,] restrictionNumbers, Signs[] restrictionSigns)
         {
@@ -40,32 +40,32 @@ namespace P2
                 throw new ArgumentNullException();
             }
 
-            this.ObjectiveFunctionCoefficients = new double[objectiveFunctionCoefficients.Length];
-            this.RestrictionNumbers = new double[restrictionNumbers.GetUpperBound(0) + 1, restrictionNumbers.GetUpperBound(1) + 1];
-            this.RestrictionSigns = new Signs[restrictionSigns.Length];
+            this.objectiveFunctionCoefficients = new double[objectiveFunctionCoefficients.Length];
+            this.restrictionNumbers = new double[restrictionNumbers.GetUpperBound(0) + 1, restrictionNumbers.GetUpperBound(1) + 1];
+            this.restrictionSigns = new Signs[restrictionSigns.Length];
 
-            for (int i = 0; i < this.ObjectiveFunctionCoefficients.Length; i++)
+            for (int i = 0; i < this.objectiveFunctionCoefficients.Length; i++)
             {
-                this.ObjectiveFunctionCoefficients[i] = objectiveFunctionCoefficients[i];
+                this.objectiveFunctionCoefficients[i] = objectiveFunctionCoefficients[i];
             }
 
-            for (int i = 0; i < this.RestrictionNumbers.GetUpperBound(0) + 1; i++)
+            for (int i = 0; i < this.restrictionNumbers.GetUpperBound(0) + 1; i++)
             {
-                for (int j = 0; j < this.RestrictionNumbers.GetUpperBound(1) + 1; j++)
+                for (int j = 0; j < this.restrictionNumbers.GetUpperBound(1) + 1; j++)
                 {
-                    this.RestrictionNumbers[i, j] = restrictionNumbers[i, j];
+                    this.restrictionNumbers[i, j] = restrictionNumbers[i, j];
                 }
             }
-            for (int i = 0; i < this.RestrictionSigns.Length; i++)
+            for (int i = 0; i < this.restrictionSigns.Length; i++)
             {
-                this.RestrictionSigns[i] = restrictionSigns[i];
+                this.restrictionSigns[i] = restrictionSigns[i];
             }
 
         }
 
         public SolutionVariants Solution(PrintІnitial printІnitial , PrintCanonicalForm printCanonicalForm,PrintTable printTable)
         {
-            printІnitial(ObjectiveFunctionCoefficients, RestrictionNumbers);
+            printІnitial(objectiveFunctionCoefficients, restrictionNumbers);
 
             double[] canonicalObjectiveFunctionCoefficients;
             double[,] canonicalRestrictionCoefficients;
@@ -74,18 +74,20 @@ namespace P2
 
             var firstTable = new SimplexTable(canonicalObjectiveFunctionCoefficients, canonicalRestrictionCoefficients);
 
-            firstTable.FindBasis(RestrictionNumbers);
+            firstTable.FindBasis(restrictionNumbers);
             firstTable.FindAssessments();
             firstTable.FindConditionalVector();
 
-            printCanonicalForm(firstTable, canonicalObjectiveFunctionCoefficients, canonicalRestrictionCoefficients, this.RestrictionNumbers);
+            printCanonicalForm(firstTable, canonicalObjectiveFunctionCoefficients, canonicalRestrictionCoefficients, this.restrictionNumbers);
             printTable(firstTable);
 
             var canSolutionBeImproved = firstTable.CanSimplexTableBeImproved();
 
             List<SimplexTable> tableList = new List<SimplexTable>();
+
             tableList.Add(firstTable);
             int iteration = 0;
+
             while (canSolutionBeImproved == SolutionVariants.СontinueSolution)
             {
                 tableList.Add(tableList[iteration].JordanTpransformation());
@@ -96,16 +98,17 @@ namespace P2
 
                 canSolutionBeImproved = tableList[iteration].CanSimplexTableBeImproved();
             }
+
             return canSolutionBeImproved;
         }
 
         private void ToCanonicalForm(out double[] canonicalObjectiveFunctionCoefficients, out double[,] canonicalRestrictionCoefficients)
         {
-            int countVariables = this.RestrictionNumbers.GetUpperBound(1);
+            int countVariables = this.restrictionNumbers.GetUpperBound(1);
 
-            for (int i = 0; i < this.RestrictionSigns.Length; i++)
+            for (int i = 0; i < this.restrictionSigns.Length; i++)
             {
-                switch (this.RestrictionSigns[i])
+                switch (this.restrictionSigns[i])
                 {
                     case Signs.LessEquals:
                         countVariables++;
@@ -117,38 +120,28 @@ namespace P2
             }
 
             canonicalObjectiveFunctionCoefficients = new double[countVariables];
-            canonicalRestrictionCoefficients = new double[this.RestrictionNumbers.GetUpperBound(0) + 1, countVariables];
+            canonicalRestrictionCoefficients = new double[this.restrictionNumbers.GetUpperBound(0) + 1, countVariables];
 
-            if (countVariables > this.RestrictionNumbers.GetUpperBound(1))
+            if (countVariables > this.restrictionNumbers.GetUpperBound(1))
             {
-                for (int i = 0; i < this.ObjectiveFunctionCoefficients.Length; i++)
-                {
-                    canonicalObjectiveFunctionCoefficients[i] = this.ObjectiveFunctionCoefficients[i];
-                }
+                Array.Copy(this.objectiveFunctionCoefficients, canonicalObjectiveFunctionCoefficients, this.objectiveFunctionCoefficients.Length);
 
-                for (int i = this.ObjectiveFunctionCoefficients.Length; i < countVariables; i++)
+                for (int i = this.objectiveFunctionCoefficients.Length; i < countVariables; i++)
                 {
                     canonicalObjectiveFunctionCoefficients[i] = 0;
                 }
 
+                this.CopyArray(this.restrictionNumbers, canonicalRestrictionCoefficients, this.restrictionNumbers.GetUpperBound(0) + 1, this.restrictionNumbers.GetUpperBound(1));
+                
+                int col = this.restrictionNumbers.GetUpperBound(1);
 
-                for (int i = 0; i < this.RestrictionNumbers.GetUpperBound(0) + 1; i++)
-                {
-                    for (int j = 0; j < this.RestrictionNumbers.GetUpperBound(1); j++)
-                    {
-                        canonicalRestrictionCoefficients[i, j] = this.RestrictionNumbers[i, j];
-                    }
-                }
-
-                int col = this.RestrictionNumbers.GetUpperBound(1);
-
-                for (int i = 0; i < this.RestrictionNumbers.GetUpperBound(0) + 1; i++)
+                for (int i = 0; i < this.restrictionNumbers.GetUpperBound(0) + 1; i++)
                 {
 
-                    if (this.RestrictionSigns[i] == Signs.LessEquals)
+                    if (this.restrictionSigns[i] == Signs.LessEquals)
                     {
 
-                        for (int k = 0; k < this.RestrictionNumbers.GetUpperBound(0) + 1; k++)
+                        for (int k = 0; k < this.restrictionNumbers.GetUpperBound(0) + 1; k++)
                         {
                             if (k == i)
                             {
@@ -161,44 +154,44 @@ namespace P2
                         }
 
                         col++;
-
                     }
 
                 }
 
             }
-            else if (countVariables < this.RestrictionNumbers.GetUpperBound(1))
+            else if (countVariables < this.restrictionNumbers.GetUpperBound(1))
             {
-                for (int i = 0; i < countVariables; i++)
-                {
-                    canonicalObjectiveFunctionCoefficients[i] = this.ObjectiveFunctionCoefficients[i];
-                }
-
-                for (int i = 0; i < this.RestrictionNumbers.GetUpperBound(0) + 1; i++)
-                {
-                    for (int j = 0; j < countVariables; j++)
-                    {
-                        canonicalRestrictionCoefficients[i, j] = this.RestrictionNumbers[i, j];
-                    }
-                }
+                Array.Copy(this.objectiveFunctionCoefficients, canonicalObjectiveFunctionCoefficients, countVariables);
+                this.CopyArray(this.restrictionNumbers, canonicalRestrictionCoefficients, this.restrictionNumbers.GetUpperBound(0) + 1, countVariables);
             }
             else
             {
-                for (int i = 0; i < this.ObjectiveFunctionCoefficients.Length; i++)
-                {
-                    canonicalObjectiveFunctionCoefficients[i] = this.ObjectiveFunctionCoefficients[i];
-                }
+                Array.Copy(this.objectiveFunctionCoefficients, canonicalObjectiveFunctionCoefficients, this.objectiveFunctionCoefficients.Length);
+                this.CopyArray(this.restrictionNumbers, canonicalRestrictionCoefficients, this.restrictionNumbers.GetUpperBound(0) + 1, this.restrictionNumbers.GetUpperBound(1));
+            }
+        }
 
-                for (int i = 0; i < this.RestrictionNumbers.GetUpperBound(0) + 1; i++)
+        private void CopyArray<T>(T[,] array, T[,] arraycopy, int rowLenght, int colLenght)
+        {
+            if (array is null)
+            {
+                throw new ArgumentNullException(nameof(array));
+            }
+
+            if (arraycopy == null)
+            {
+                arraycopy = new T[rowLenght, colLenght];
+            }
+
+            for (int i = 0; i < rowLenght; i++)
+            {
+                for (int j = 0; j < colLenght; j++)
                 {
-                    for (int j = 0; j < this.RestrictionNumbers.GetUpperBound(1); j++)
-                    {
-                        canonicalRestrictionCoefficients[i, j] = this.RestrictionNumbers[i, j];
-                    }
+                    arraycopy[i, j] = array[i, j];
                 }
             }
         }
-       
+
     }
 
     }
