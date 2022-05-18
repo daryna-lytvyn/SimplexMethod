@@ -14,12 +14,11 @@ namespace P2
             var RestrictionNumbers = new double[,] { { 3, 1, 0, 2 ,900 }, { 4, 0, 1, 4, 800 }, { 0, 1, 2, 1, 600 } };
             var RestrictionSigns = new Signs[3] { Signs.LessEquals, Signs.LessEquals, Signs.LessEquals };
 
+            ConsoleSimplexOutput consoleSimplexOutput = new ConsoleSimplexOutput();
 
-            var simplexMethod = new SimplexMethod(ObjectiveFunctionCoefficients, RestrictionNumbers, RestrictionSigns);
-            
-            var print = new SimplexTable.PrintSimplex();
+            var simplexMethod = new SimplexMethod(ObjectiveFunctionCoefficients, RestrictionNumbers, RestrictionSigns, consoleSimplexOutput);                    
 
-            simplexMethod.Solution(print.PrintInitial, print.PrintCanonical, print.Print);
+            simplexMethod.Solution();
     }
     }
 }

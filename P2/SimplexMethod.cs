@@ -20,12 +20,9 @@ namespace P2
         СontinueSolution = 2
     }
 
-    public delegate void PrintІnitial(double[] ObjectiveFunctionCoefficients, double[,] RestrictionNumbers);
-    public delegate void PrintCanonicalForm(SimplexTable table, double[] objectiveFunctionCoefficients, double[,] restrictionCoefficients, double[,] RestrictionNumbers);
-    public delegate void PrintTable(SimplexTable table);
     
 
-    public class SimplexMethod
+    public class SimplexMethod 
     {
         private double[] objectiveFunctionCoefficients; //Коэффиценты функции-цели
 
@@ -33,9 +30,11 @@ namespace P2
 
         private Signs[] restrictionSigns; // знаки в ограничениях
 
-        public SimplexMethod(double[] objectiveFunctionCoefficients, double[,] restrictionNumbers, Signs[] restrictionSigns)
+        private readonly ConsoleSimplexOutput write;
+
+        public SimplexMethod(double[] objectiveFunctionCoefficients, double[,] restrictionNumbers, Signs[] restrictionSigns, ConsoleSimplexOutput write)
         {
-            if (objectiveFunctionCoefficients is null || restrictionNumbers is null || restrictionSigns is null)
+            if (objectiveFunctionCoefficients is null || restrictionNumbers is null || restrictionSigns is null|| write is null)
             {
                 throw new ArgumentNullException();
             }
@@ -60,12 +59,18 @@ namespace P2
             {
                 this.restrictionSigns[i] = restrictionSigns[i];
             }
+            this.write = write;
 
         }
 
-        public SolutionVariants Solution(PrintІnitial printІnitial , PrintCanonicalForm printCanonicalForm,PrintTable printTable)
+        public SolutionVariants Solution()
         {
-            printІnitial(objectiveFunctionCoefficients, restrictionNumbers);
+            if (this.write is null )
+            {
+                throw new ArgumentNullException();
+            }
+            write.PrintInitialDatas(objectiveFunctionCoefficients, restrictionNumbers);
+           
 
             double[] canonicalObjectiveFunctionCoefficients;
             double[,] canonicalRestrictionCoefficients;
@@ -78,8 +83,9 @@ namespace P2
             firstTable.FindAssessments();
             firstTable.FindConditionalVector();
 
-            printCanonicalForm(firstTable, canonicalObjectiveFunctionCoefficients, canonicalRestrictionCoefficients, this.restrictionNumbers);
-            printTable(firstTable);
+            write.PrintCanonical(firstTable, canonicalObjectiveFunctionCoefficients, canonicalRestrictionCoefficients, this.restrictionNumbers);
+            write.PrintSimplexTable(firstTable);
+           
 
             var canSolutionBeImproved = firstTable.CanSimplexTableBeImproved();
 
@@ -94,7 +100,7 @@ namespace P2
 
                 iteration++;
 
-                printTable(tableList[iteration]);
+                write.PrintSimplexTable(tableList[iteration]);
 
                 canSolutionBeImproved = tableList[iteration].CanSimplexTableBeImproved();
             }
@@ -135,7 +141,7 @@ namespace P2
                 
                 int col = this.restrictionNumbers.GetUpperBound(1);
 
-                for (int i = 0; i < this.restrictionNumbers.GetUpperBound(0) + 1; i++)
+                for (int i = 0; i < this.restrictionNumbers.GetUpperBound(0) + 1; i++) 
                 {
 
                     if (this.restrictionSigns[i] == Signs.LessEquals)
@@ -191,6 +197,8 @@ namespace P2
                 }
             }
         }
+
+
 
     }
 
